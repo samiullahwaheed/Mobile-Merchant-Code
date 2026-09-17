@@ -1,0 +1,184 @@
+import 'package:socket_io_client/socket_io_client.dart' as io;
+
+import '../../constant/app_api_end_point.dart';
+import '../../utils/app_log/app_log.dart';
+import '../../utils/app_log/error_log.dart';
+import '../storage/storage_service.dart';
+
+class AppSocketAllOperation {
+  AppSocketAllOperation._privateConstructor();
+  static final AppSocketAllOperation _instance =
+      AppSocketAllOperation._privateConstructor();
+  static AppSocketAllOperation get instance => _instance;
+
+  io.Socket? appRootSocket;
+  bool _isConnecting = false;
+  final Map<String, List<void Function(dynamic)>> _eventHandlers = {};
+
+  bool get isConnected => appRootSocket?.connected == true;
+
+  void initializeSocket() {
+    if (appRootSocket != null) return;
+
+    _connectSocketToServer();
+  }
+
+  void readEvent({
+    required String event,
+    required void Function(dynamic) handler,
+  }) {
+    try {
+      // Store the handler for reconnection scenarios
+      if (!_eventHandlers.containsKey(event)) {
+        _eventHandlers[event] = [];
+      }
+      _eventHandlers[event]!.add(handler);
+
+      // If already connected, setup the listener immediately
+      if (isConnected) {
+        _setupEventListener(event, handler);
+      } else {
+        // If not connected, initialize the connection
+        initializeSocket();
+      }
+    } catch (e, stackTrace) {
+      errorLog("readEvent ($event)$e $stackTrace");
+    }
+  }
+
+  void _setupEventListener(String event, void Function(dynamic) handler) {
+    appRootSocket?.off(event); // Remove existing listeners to avoid duplicates
+    appRootSocket?.on(event, (data) {
+      appLog("Received event: $event ");
+      appLog("with data: $data");
+      handler(data);
+    });
+  }
+
+  void emitEvent(String event, dynamic data) {
+    try {
+      if (isConnected) {
+        appRootSocket?.emit(event, data);
+        appLog("✅ Emitted event: $event with data: $data"); // ✅ Added logging
+      } else {
+        // Queue the emit for when connection is established
+        initializeSocket();
+        _onceConnected(() {
+          appRootSocket?.emit(event, data);
+          appLog(
+            "✅ Emitted event after connection: $event with data: $data",
+          ); // ✅ Added logging
+        });
+      }
+    } catch (e, stackTrace) {
+      errorLog("emitEvent ($event) $e $stackTrace");
+    }
+  }
+
+  void _onceConnected(void Function() callback) {
+    if (isConnected) {
+      callback();
+      return;
+    }
+
+    void listener(dynamic listener) {
+      try {
+        callback();
+        appRootSocket?.off('connect', listener);
+      } catch (e) {
+        errorLog("listener $e");
+      }
+    }
+
+    appRootSocket?.on('connect', listener);
+  }
+
+  void _connectSocketToServer() {
+    try {
+      if (appRootSocket != null || _isConnecting) return;
+
+      _isConnecting = true;
+      appLog("Attempting to connect socket...");
+
+      appLog("Using Token for Socket: ${LocalStorage.token}");
+
+      appRootSocket = io.io(
+        AppApiEndPoint.domain,
+        io.OptionBuilder()
+            .setTransports(['websocket', 'polling'])
+            .setQuery({"token": LocalStorage.token})
+            .disableAutoConnect()
+            .setAuth({
+              "token": LocalStorage.token,
+              "Authorization": "Bearer ${LocalStorage.token}",
+            })
+            .setExtraHeaders({"Authorization": "Bearer ${LocalStorage.token}"})
+            .enableReconnection()
+            .build(),
+      );
+
+      // Setup connection listeners
+      appRootSocket?.onConnect((_) {
+        _isConnecting = false;
+        appLog("Socket connected");
+
+        // ✅ Join user-specific room for real-time updates
+        appRootSocket?.emit('join_user_room', LocalStorage.userId);
+        appLog("Joined user room: ${LocalStorage.userId}");
+
+        // Re-establish all event listeners using for loops
+        for (final entry in _eventHandlers.entries) {
+          final event = entry.key;
+          final handlers = entry.value;
+          for (final handler in handlers) {
+            _setupEventListener(event, handler);
+          }
+        }
+      });
+
+      appRootSocket?.onDisconnect((data) {
+        errorLog("Socket disconnected: $data");
+        _isConnecting = false;
+      });
+
+      appRootSocket?.onConnectError((data) {
+        errorLog("Socket Connect error: $data");
+        _isConnecting = false;
+      });
+
+      appRootSocket?.onError((data) {
+        errorLog("Socket Error: $data");
+        _isConnecting = false;
+      });
+
+      appRootSocket?.onReconnect((_) {
+        appLog("Socket reconnected");
+        // ✅ Rejoin user room on reconnect
+        appRootSocket?.emit('join_user_room', LocalStorage.userId);
+        appLog("Rejoined user room after reconnect: ${LocalStorage.userId}");
+      });
+
+      // Start the connection
+      appRootSocket?.connect();
+    } catch (e, stackTrace) {
+      _isConnecting = false;
+      errorLog("_connectSocketToServer $e $stackTrace");
+    }
+  }
+
+  void reconnect() {
+    if (!isConnected && !_isConnecting) {
+      _connectSocketToServer();
+    }
+  }
+
+  void dispose() {
+    if (appRootSocket != null) {
+      appRootSocket?.disconnect();
+      appRootSocket?.dispose();
+      appRootSocket = null;
+    }
+    _eventHandlers.clear();
+    _isConnecting = false;
+  }
+}
