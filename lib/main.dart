@@ -8,6 +8,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:merchent/my_app.dart';
 import 'package:merchent/service/api_service/cookie_service.dart';
 import 'package:merchent/service/network/network_controller.dart';
+import 'package:merchent/service/push_notification/notification_service.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -21,6 +22,7 @@ Future<void> main() async {
   await CookieService.instance.init();
   await GetStorage.init();
   await Firebase.initializeApp();
+  await NotificationService.initLocalNotification();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   Get.put(NetworkController(), permanent: true);
 
