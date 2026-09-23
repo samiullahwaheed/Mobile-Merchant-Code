@@ -35,7 +35,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       "imageHeight": AppSize.width(value: 220),
       "title": 'Grow with every purchase!',
       "subtitle":
-          "Get started today and unlock exclusive be1nefits for your customers.",
+          "Get started today and unlock exclusive benefits for your customers.",
     },
     {
       "imagePath": AppImagePath.onboardingStoreImage,
@@ -44,7 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       "imageTopMargin": AppSize.height(value: 200),
       "title": 'Greetings Store Owner!',
       "subtitle":
-          "Set up your shop and start offering exclusive benefits to your customers.",
+          "Set up your business and start offering exclusive benefits to your customers.",
     },
   ];
 

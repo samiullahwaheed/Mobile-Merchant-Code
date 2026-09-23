@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:merchent/constant/app_api_end_point.dart';
@@ -10,6 +9,7 @@ import '../../../../routes/app_routes.dart';
 import '../../../../service/repository/auth_repository/forgot_pass_repository.dart';
 import '../../../../service/repository/auth_repository/verify_otp_repository.dart';
 import '../../../../widget/app_snack_bar/app_snack_bar.dart';
+import 'package:merchent/service/push_notification/notification_service.dart';
 import '../model/verify_otp_model.dart';
 
 class VerifyOtpScreenController extends GetxController {
@@ -92,7 +92,7 @@ class VerifyOtpScreenController extends GetxController {
 
   Future<void> getFCMToken() async {
     try {
-      String? token = await FirebaseMessaging.instance.getToken();
+      String? token = await NotificationService.getFcmToken();
       appLog("FCM TOKEN: $token");
       if (token != null) {
         await _updateProfileRepository.syncFCMToken(token);

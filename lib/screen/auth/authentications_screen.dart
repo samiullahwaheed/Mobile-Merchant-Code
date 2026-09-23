@@ -57,7 +57,7 @@ class _AuthenticationsScreenState extends State<AuthenticationsScreen> {
                       fontColor: Colors.white,
                     ),
                     TextWidget(
-                      text: "Let's dive in into your account",
+                      text: "Let's dive into your account",
                       fontSize: isTablet ? 20 : (isSmallScreen ? 14 : 18),
                       fontWeight: FontWeight.w500,
                       fontColor: Colors.white,

@@ -1,4 +1,3 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -8,6 +7,7 @@ import '../../../../utils/app_log/app_log.dart';
 import '../../../../service/repository/update_profile_repository.dart';
 import '../../../../utils/app_log/error_log.dart';
 import '../../../../widget/app_snack_bar/app_snack_bar.dart';
+import 'package:merchent/service/push_notification/notification_service.dart';
 import '../model/sign_in_model.dart';
 
 class SignInController extends GetxController {
@@ -38,7 +38,7 @@ class SignInController extends GetxController {
 
   Future<void> getFCMToken() async {
     try {
-      String? token = await FirebaseMessaging.instance.getToken();
+      String? token = await NotificationService.getFcmToken();
       appLog("FCM TOKEN: $token");
       if (token != null) {
         await _updateProfileRepository.syncFCMToken(token);

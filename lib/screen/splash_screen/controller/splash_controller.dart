@@ -1,4 +1,3 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
 import 'package:merchent/screen/profile_section/profile_screen/model/profile_model.dart';
@@ -9,6 +8,7 @@ import '../../../routes/app_routes.dart';
 import '../../../service/storage/storage_service.dart';
 import '../../../utils/app_log/app_log.dart';
 import '../../../utils/app_log/error_log.dart';
+import 'package:merchent/service/push_notification/notification_service.dart';
 import '../../../service/repository/update_profile_repository.dart';
 
 class SplashController extends GetxController {
@@ -107,7 +107,7 @@ class SplashController extends GetxController {
   /// ===============================
   Future<void> getFCMToken() async {
     try {
-      String? token = await FirebaseMessaging.instance.getToken();
+      String? token = await NotificationService.getFcmToken();
 
       appLog("FCM TOKEN: $token");
 
