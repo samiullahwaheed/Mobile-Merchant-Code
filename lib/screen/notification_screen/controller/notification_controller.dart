@@ -1,9 +1,6 @@
-import 'dart:io' show Platform;
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import 'package:merchent/screen/notification_screen/model/notification_model.dart';
-import 'package:merchent/service/push_notification/notification_service.dart';
 import 'package:merchent/service/repository/notification_repository.dart';
 import '../../../service/sockets/app_socket_all_operation.dart';
 import '../../../utils/app_log/app_log.dart';
@@ -177,36 +174,21 @@ class NotificationController extends GetxController {
     } else {
       appLog('User declined or has not accepted permission');
     }
-
-    await messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
   }
 
   void listenFCM() async {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
 
       appLog("Got a message whilst in the foreground!");
       appLog("Message data: ${message.data}");
 
-      if (notification != null) {
+      if (notification != null && android != null) {
         AppSnackBar.notification(
           title: notification.title ?? 'Notification',
           body: notification.body ?? '',
         );
-
-        // iOS has no automatic system banner while the app is foregrounded
-        // (Android already gets one via the OS); show one explicitly here
-        // so foreground pushes are visible the same way on both platforms.
-        if (Platform.isIOS) {
-          NotificationService.showNotification(
-            title: notification.title ?? 'Notification',
-            body: notification.body ?? '',
-          );
-        }
       }
     });
   }
